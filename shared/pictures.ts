@@ -12,7 +12,8 @@ Examples:
   view holidays
   view ~/pictures
 
-Without a path, view shows the current album, or ~/pictures from elsewhere.
+Without a path, view shows the current picture album.
+From other directories, pass a path, such as view ~/pictures.
 Albums show their immediate pictures. Use ls and cd to explore subdirectories.
 Tab completes picture and album paths. Images appear inside terminal output.
 Pictures and albums are managed by the admin. Visitors have read-only access.`;

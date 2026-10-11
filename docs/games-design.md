@@ -42,6 +42,8 @@ Browser storage is optional. 2048 ignores best-score storage failures. The adven
 
 The terminal handles selected-text copying before cancellation. Ctrl+C with no selection exits the active game; Ctrl+Shift+C attempts to copy selected text. Escape clears output selection and focuses the input. Page Up/Down move terminal scrollback. Shift+Tab can reach links and media rather than issuing a game action.
 
+Shell and adventure completion/history use `replaceInput()` to pair replacement text with its cursor position. A layout effect applies the position with the controlled input's commit. New keyboard input, typing, pointer activity, or blur cancels any pending position. Cursor movement must finish before later user editing; deferred animation-frame cursor moves can overwrite a new selection. [tests/e2e/input.spec.ts](../tests/e2e/input.spec.ts) exercises selection, mid-line completion, history edits, and draft restoration with delayed frames on desktop and mobile.
+
 Ctrl+L clears earlier output without resetting game state. The live 2048 board or bonsai remains mounted; the adventure replaces scrollback with the current room description. Bonsai screensaver mode is an exception: it consumes non-copy keypresses before the normal terminal shortcuts and exits.
 
 Desktop games can handle immediate keydown events. On touch devices, typed commands followed by Enter remain available because soft keyboards may not emit useful keydown events. The terminal uses `visualViewport` to track the space left by the keyboard. [src/styles.css](../src/styles.css) uses container queries for compact live-game layouts; [src/themes.css](../src/themes.css) supplies colours inherited from the selected terminal theme.

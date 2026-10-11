@@ -57,11 +57,11 @@ const text = (s: string, tone?: 'error' | 'dim' | 'success'): ShellResult => ({ 
 function viewPictures(args: string[], cwd: string, fs: Map<string, Node>): ShellResult {
   if (args.length === 1 && args[0] === '--help') return text(pictureInstructions);
   if (args.length > 1) return text('Usage: view [file|album]', 'error');
-  const path = resolvePath(args[0] ?? (cwd === '/pictures' || cwd.startsWith('/pictures/') ? cwd : '/pictures'), cwd);
+  const path = resolvePath(args[0] ?? '.', cwd);
   const node = fs.get(path);
   if (!node) return text(`view: ${args[0]}: No such file or directory`, 'error');
   if (node.kind === 'picture') return { output: [{ type: 'picture', picture: node.picture, path }] };
-  if (node.kind !== 'directory' || !(path === '/pictures' || path.startsWith('/pictures/'))) return text('view: Choose a picture or album inside ~/pictures. Type view --help for instructions.', 'error');
+  if (node.kind !== 'directory' || !(path === '/pictures' || path.startsWith('/pictures/'))) return text('view: Choose a picture or album inside ~/pictures. Use view ~/pictures, or pass a picture or album path. Type view --help for instructions.', 'error');
   const prefix = path + '/';
   const output: Output[] = [...fs].filter(([p, n]) => n.kind === 'picture' && p.startsWith(prefix) && !p.slice(prefix.length).includes('/')).sort(([a], [b]) => a.localeCompare(b)).map(([p, n]) => ({ type: 'picture', picture: (n as { kind: 'picture'; picture: Picture }).picture, path: p }));
   return output.length ? { output: [{ type: 'text', text: `${displayPath(path)}: ${output.length} picture${output.length === 1 ? '' : 's'}.` }, ...output] } : text(`view: No pictures in ${displayPath(path)}. Use ls to explore subdirectories.`, 'dim');

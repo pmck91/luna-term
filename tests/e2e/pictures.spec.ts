@@ -88,6 +88,14 @@ test('visitors browse pictures with keyboard commands and inline images stay wit
     await input.press('Escape'); await expect(input).toBeFocused();
     await input.press('Control+l'); await expect(page.locator('.picture-output')).toHaveCount(0);
     await command(page, 'pwd'); await expect(page.locator('.text-output').last()).toHaveText(`/pictures/${rootName}/cats`);
+    await command(page, 'view'); await expect(page.locator('.picture-output')).toHaveCount(6);
+    for (const directory of ['messaging', 'games']) {
+      await command(page, `cd ~/${directory}`); await command(page, 'view');
+      await expect(page.locator('.text-output').last()).toContainText('Use view ~/pictures');
+      await expect(page.locator('.picture-output')).toHaveCount(6);
+    }
+    await command(page, `view ~/pictures/${rootName}/cats`); await expect(page.locator('.picture-output')).toHaveCount(12);
+    await command(page, `cd ~/pictures/${rootName}/cats`); await command(page, 'clear');
     await command(page, 'mkdir new'); await expect(page.locator('.text-output').last()).toContainText('command not found');
     await page.setViewportSize({ width: 320, height: 330 }); await command(page, 'view luna-1.png'); await fits(page);
     await page.screenshot({ path: `artifacts/${info.project.name}-pictures-short.png` });

@@ -43,11 +43,21 @@ describe('read-only virtual pictures', () => {
     expect(execute('cat ~/pictures/luna-at-the-window.jpeg', '/', catalog).output[0]).toMatchObject({ text: expect.stringContaining('Use view') });
   });
   it('views immediate album pictures, defaults to the current album, and explains empty albums', () => {
-    expect(execute('view', '/', catalog).output).toHaveLength(2);
+    expect(execute('view', '/pictures', catalog).output).toHaveLength(2);
     expect(execute('view', '/pictures/holidays/ireland', catalog).output[1]).toMatchObject({ type: 'picture', picture: nested });
     expect(execute('view ~/pictures/holidays', '/', catalog).output[0]).toMatchObject({ text: expect.stringContaining('No pictures') });
     expect(execute('./view', '/pictures', catalog).output[1]).toMatchObject({ type: 'picture', picture });
     expect(execute('help', '/', catalog).output[0]).toMatchObject({ text: expect.stringContaining('Luna picture viewer') });
+  });
+  it('requires an explicit picture path outside albums, even after previously viewing pictures', () => {
+    expect(execute('view', '/pictures', catalog).output[1]).toMatchObject({ type: 'picture', picture });
+    for (const cwd of ['/', '/messaging', '/games', '/projects', '/documents']) {
+      for (const command of ['view', '~/pictures/view']) {
+        const result = execute(command, cwd, catalog);
+        expect(result.output).toEqual([{ type: 'text', tone: 'error', text: expect.stringContaining('Use view ~/pictures') }]);
+      }
+      expect(execute('view ~/pictures', cwd, catalog).output[1]).toMatchObject({ type: 'picture', picture });
+    }
   });
   it('completes viewer commands, files and nested directory paths', () => {
     expect(complete('vi', '/', catalog).input).toBe('view ');

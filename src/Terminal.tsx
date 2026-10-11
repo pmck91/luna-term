@@ -68,6 +68,7 @@ export function Terminal() {
   const adventureHistory = useRef<{ lines: string[]; index: number; draft: string }>({ lines: [], index: 0, draft: '' });
   const [focused, setFocused] = useState(false); const [caret, setCaret] = useState({ left: 0, selected: false });
   const input = useRef<HTMLInputElement>(null); const output = useRef<HTMLDivElement>(null);
+  const pendingSelection = useRef<{ text: string; position: number } | null>(null);
   const outputSize = useRef({ width: 0, height: 0 });
   const history = useRef<string[]>([]); const historyIndex = useRef(0); const draft = useRef(''); const followOutput = useRef(true); const mounted = useRef(true);
   const prompt = phase === 'login' ? 'term.pmck.ie login:' : adventure ? adventure.confirmRestart ? 'restart? [yes/no]:' : 'luna>' : bonsai ? 'bonsai>' : game ? game.confirmRestart ? 'restart? [y/n]:' : '2048>' : contact ? `${contact.step === 'review' ? 'send / edit / cancel' : contact.step}:` : `${username}@term.pmck.ie:${displayPath(cwd)}$`;
@@ -78,6 +79,16 @@ export function Terminal() {
     const ctx = document.createElement('canvas').getContext('2d'); if (!ctx) return;
     ctx.font = getComputedStyle(el).font;
     setCaret({ left: Math.max(0, ctx.measureText(el.value.slice(0, el.selectionStart ?? el.value.length)).width - el.scrollLeft), selected: el.selectionStart !== el.selectionEnd });
+  };
+  const replaceInput = (text: string, position = text.length) => {
+    // Place the cursor with the controlled value's commit, before another
+    // keypress or selection can arrive. No later animation frame moves it.
+    pendingSelection.current = { text, position };
+    if (input.current?.value === text) {
+      pendingSelection.current = null;
+      input.current.setSelectionRange(position, position); updateCaret();
+    }
+    setValue(text);
   };
   useEffect(() => {
     mounted.current = true; const controller = new AbortController();
@@ -94,7 +105,11 @@ export function Terminal() {
   useEffect(() => { if (phase !== 'boot') focus(); }, [phase]);
   const follow = () => { if (followOutput.current && !window.getSelection()?.toString() && output.current) output.current.scrollTop = output.current.scrollHeight; };
   useLayoutEffect(follow, [blocks, game, bonsai]);
-  useLayoutEffect(() => { requestAnimationFrame(updateCaret); }, [value, focused, prompt]);
+  useLayoutEffect(() => {
+    const selection = pendingSelection.current; pendingSelection.current = null;
+    if (selection && input.current?.value === selection.text) input.current.setSelectionRange(selection.position, selection.position);
+    updateCaret();
+  }, [value, focused, prompt]);
   useEffect(() => {
     const handler = (event: globalThis.KeyboardEvent) => {
       if (phase === 'boot' || event.isComposing) return;
@@ -240,6 +255,7 @@ export function Terminal() {
     requestAnimationFrame(focus);
   }
   function onKey(event: KeyboardEvent<HTMLInputElement>) {
+    pendingSelection.current = null;
     if (event.nativeEvent.isComposing) return;
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'c' && !event.shiftKey) {
       if (window.getSelection()?.toString() || input.current?.selectionStart !== input.current?.selectionEnd) return;
@@ -273,27 +289,27 @@ export function Terminal() {
           ? { input: answers.length === 1 ? `${answers[0]} ` : prefix, candidates: answers }
           : completeAdventure(prefix, adventure.state);
         const completed = result.input + value.slice(pos);
-        setValue(completed); requestAnimationFrame(() => { if (el.value === completed) el.setSelectionRange(result.input.length, result.input.length); });
+        replaceInput(completed, result.input.length);
         if (result.candidates.length > 1) append({ type: 'adventure', lines: [{ text: result.candidates.join('  '), tone: 'dim' }] });
       }
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         event.preventDefault(); const h = adventureHistory.current;
         if (h.index === h.lines.length) h.draft = value;
         h.index = Math.max(0, Math.min(h.lines.length, h.index + (event.key === 'ArrowUp' ? -1 : 1)));
-        setValue(h.index === h.lines.length ? h.draft : h.lines[h.index]); requestAnimationFrame(() => input.current?.setSelectionRange(99999, 99999));
+        replaceInput(h.index === h.lines.length ? h.draft : h.lines[h.index]);
       }
       return;
     }
     if (contact || phase !== 'shell') return;
     if (event.key === 'Tab' && !event.shiftKey) {
       event.preventDefault(); const el = input.current!; const pos = el.selectionStart ?? value.length; const result = complete(value.slice(0, pos), cwd, catalog);
-      const completed = result.input + value.slice(pos); setValue(completed);
-      requestAnimationFrame(() => { if (el.value === completed) el.setSelectionRange(result.input.length, result.input.length); }); if (result.candidates.length > 1) append({ type: 'text', text: result.candidates.join('  '), tone: 'dim' });
+      const completed = result.input + value.slice(pos);
+      replaceInput(completed, result.input.length); if (result.candidates.length > 1) append({ type: 'text', text: result.candidates.join('  '), tone: 'dim' });
     }
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault(); if (historyIndex.current === history.current.length) draft.current = value;
       historyIndex.current = Math.max(0, Math.min(history.current.length, historyIndex.current + (event.key === 'ArrowUp' ? -1 : 1)));
-      setValue(historyIndex.current === history.current.length ? draft.current : history.current[historyIndex.current]); requestAnimationFrame(() => input.current?.setSelectionRange(99999, 99999));
+      replaceInput(historyIndex.current === history.current.length ? draft.current : history.current[historyIndex.current]);
     }
   }
   return <main className="public-page" data-theme={theme}>
@@ -313,7 +329,7 @@ export function Terminal() {
       </div>
       {/* This virtual console needs password-manager ignore hints as well as autocomplete off. */}
       <form className="command-line" onSubmit={e => { e.preventDefault(); void submit(); }} autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-form-type="other">
-        {phase === 'boot' ? <span className="muted boot-status">Connecting<span className="static-cursor" /></span> : <><label className="prompt" htmlFor="terminal-input">{prompt}</label><div className="input-wrap"><input id="terminal-input" name="terminal-command" type="text" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" data-form-type="other" ref={input} value={value} onChange={e => setValue(e.target.value)} onKeyDown={onKey} onKeyUp={updateCaret} onSelect={updateCaret} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onScroll={updateCaret} readOnly={sending} autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="send" aria-label={phase === 'login' ? 'Username, suggested guest' : adventure ? 'Luna adventure input' : bonsai ? 'Bonsai input' : game ? '2048 game input' : contact ? `${contact.step} input` : 'Terminal command'} /><span aria-hidden="true" className={`block-cursor ${focused && !caret.selected && !sending ? 'visible' : ''}`} style={{ left: caret.left }} /></div>{sending && <span className="muted">sending…</span>}</>}
+        {phase === 'boot' ? <span className="muted boot-status">Connecting<span className="static-cursor" /></span> : <><label className="prompt" htmlFor="terminal-input">{prompt}</label><div className="input-wrap"><input id="terminal-input" name="terminal-command" type="text" autoComplete="off" data-1p-ignore="true" data-lpignore="true" data-bwignore="true" data-form-type="other" ref={input} value={value} onChange={e => { pendingSelection.current = null; setValue(e.target.value); }} onKeyDown={onKey} onKeyUp={updateCaret} onSelect={updateCaret} onPointerDown={() => { pendingSelection.current = null; }} onFocus={() => setFocused(true)} onBlur={() => { pendingSelection.current = null; setFocused(false); }} onScroll={updateCaret} readOnly={sending} autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="send" aria-label={phase === 'login' ? 'Username, suggested guest' : adventure ? 'Luna adventure input' : bonsai ? 'Bonsai input' : game ? '2048 game input' : contact ? `${contact.step} input` : 'Terminal command'} /><span aria-hidden="true" className={`block-cursor ${focused && !caret.selected && !sending ? 'visible' : ''}`} style={{ left: caret.left }} /></div>{sending && <span className="muted">sending…</span>}</>}
       </form>
     </section>
     <footer>© pmck {new Date().getFullYear()}</footer>
