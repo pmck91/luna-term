@@ -1,6 +1,6 @@
 # Luna terminal portfolio
 
-A browser-only virtual terminal for **term.pmck.ie**, developed by Peter McKinney. Luna is named after his cat. The public page contains a terminal window and copyright footer. Content management lives at `/admin`.
+A browser-only virtual terminal for **[term.pmck.ie](term.pmck.ie)**. the imagined Luna distro is named after my cat. 
 
 Built with [Codex](https://openai.com/codex/).
 
