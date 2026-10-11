@@ -1,0 +1,10 @@
+{
+  "kind": "project",
+  "slug": "night-watch",
+  "title": "Night Watch (example)",
+  "markdown": "project.md",
+  "media": [
+    { "id": "c4d7f4f3-9a2f-4f75-a8b1-13e4b94b8ea2", "file": "night-sky.png", "mime": "image/png" },
+    { "id": "a8b5c61d-784d-4b93-b0e6-85f2bf728390", "file": "night-sky.mp4", "mime": "video/mp4" }
+  ]
+}

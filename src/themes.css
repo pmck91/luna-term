@@ -1,0 +1,10 @@
+[data-theme="mocha"] { --page:#11111b; --surface:#1e1e2e; --chrome:#181825; --border:#313244; --text:#cdd6f4; --muted:#9399b2; --green:#a6e3a1; --accent:#cba6f7; --link:#89b4fa; --yellow:#f9e2af; --red:#f38ba8; --selection:#45475a; }
+[data-theme="dracula"] { --page:#191a21; --surface:#282a36; --chrome:#21222c; --border:#44475a; --text:#f8f8f2; --muted:#a0a8c8; --green:#50fa7b; --accent:#bd93f9; --link:#8be9fd; --yellow:#f1fa8c; --red:#ff5555; --selection:#44475a; }
+[data-theme="nord"] { --page:#242933; --surface:#2e3440; --chrome:#272d38; --border:#434c5e; --text:#eceff4; --muted:#a5b1c6; --green:#a3be8c; --accent:#b48ead; --link:#88c0d0; --yellow:#ebcb8b; --red:#bf616a; --selection:#4c566a; }
+[data-theme="solarized-dark"] { --page:#001e27; --surface:#002b36; --chrome:#00232c; --border:#073642; --text:#93a1a1; --muted:#839496; --green:#b5bb00; --accent:#b589d4; --link:#268bd2; --yellow:#b58900; --red:#dc322f; --selection:#073642; }
+
+/* Tile values keep their own foreground colour in each terminal palette. */
+[data-theme="mocha"] { --tile-2:#89b4fa; --tile-4:#94e2d5; --tile-8:#a6e3a1; --tile-16:#f9e2af; --tile-32:#fab387; --tile-64:#eba0ac; --tile-128:#f5c2e7; --tile-256:#cba6f7; --tile-512:#b4befe; --tile-1024:#74c7ec; --tile-2048:#f38ba8; }
+[data-theme="dracula"] { --tile-2:#8be9fd; --tile-4:#71e5b2; --tile-8:#50fa7b; --tile-16:#f1fa8c; --tile-32:#ffb86c; --tile-64:#ff927b; --tile-128:#ff79c6; --tile-256:#bd93f9; --tile-512:#b6bcff; --tile-1024:#78bfff; --tile-2048:#ff5555; }
+[data-theme="nord"] { --tile-2:#81a1c1; --tile-4:#8fbcbb; --tile-8:#a3be8c; --tile-16:#ebcb8b; --tile-32:#d9937d; --tile-64:#d995a3; --tile-128:#d6a6c5; --tile-256:#c29eba; --tile-512:#bac5e9; --tile-1024:#88c0d0; --tile-2048:#d98b95; }
+[data-theme="solarized-dark"] { --tile-2:#57a6d9; --tile-4:#2aa198; --tile-8:#b5bb00; --tile-16:#dfb340; --tile-32:#e59256; --tile-64:#e77f7a; --tile-128:#dc78ad; --tile-256:#b589d4; --tile-512:#99a6e8; --tile-1024:#6bcbd2; --tile-2048:#f06369; }
