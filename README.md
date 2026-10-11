@@ -87,6 +87,28 @@ Progress is saved after changes under `luna-adventure-save` in local storage, in
 
 ## Content management
 
+### Pictures and albums
+
+`~/pictures` is a separate image collection. Visitors can list albums, change directories, and run the picture viewer:
+
+```text
+cd ~/pictures
+ls
+view luna.jpg
+view holidays
+~/pictures/view ~/pictures/holidays
+```
+
+`view` without a path displays the current album's immediate pictures, or the root picture collection when run elsewhere. Subdirectories are explored with `ls` and `cd`; albums are not displayed recursively. Tab completes viewer commands, filenames, and album paths. Images and their names appear inside normal terminal scrollback, with the command line remaining available. `view --help` prints instructions.
+
+Use **Pictures** in the admin, or open `/admin/pictures`, to upload and name pictures, edit their names, move them between albums, and preview them in the terminal. Picture names become lowercase filenames with hyphens, keeping their verified image extension (`.jpg`, `.jpeg`, `.png`, `.gif`, or `.webp`). JPEG, PNG, GIF, and WebP uploads are limited to 10 MB. Pictures are public immediately after saving.
+
+Create albums with lowercase directory names and choose their parent to make nested albums. Albums can be renamed or moved; cycles are rejected. Only empty albums can be deleted. Deleting a picture removes its gallery record and uploaded file. Visitors cannot upload, rename, delete, or create directories.
+
+Gallery pictures use separate database records and media URLs from post/project uploads. Their files persist in the existing media volume, and an automatic database migration adds the picture tables without changing existing content. Reload the public terminal after changing the collection to fetch the updated catalogue.
+
+### Projects, posts, and messages
+
 The first database initializes with a published project about this portfolio and one unpublished example blog post. Social links initially contain no entries.
 
 An optional [Night Watch example](examples/night-watch/README.md) includes an illustration, a feature list, and a locally hosted video. After initializing the database, run `npm run example:night-watch` to add it as a draft, or `npm run example:night-watch -- --publish` to make it runnable as `~/projects/night-watch.luna`. Repeat imports preserve existing entries. In Docker, use `docker compose -p luna exec luna node scripts/import-example.mjs --publish`.
@@ -227,6 +249,8 @@ docker compose -p luna config --quiet
 Unit and API tests cover command parsing, path resolution, completion, themes, safe content rendering, private media, contact validation/persistence/rate limits, authentication, setup races, session rotation/expiry, and route protection. Game tests cover directional merges, scoring, spawning, invalid moves, win/loss detection, continued play, ASCII rendering, and personal best validation. Browser tests cover startup, the exact cat logo, keyboard controls, text selection, scrollback, mobile viewport shrinking, contact review/editing, inline image/video containment, and admin editing/preview, plus game restart/exit, saved scores, all theme palettes and tile contrast, and full board visibility in a short viewport.
 
 Bonsai tests cover seeded generation, bounded rendering, virtual commands, pause/resume, selection, screensaver cycling, reduced motion, hidden-tab suspension, and viewport fitting. Adventure tests cover the exact house graph, all six quest orders, optional puzzles before and after the main ending, office-door access, the fox scene, legacy-save migration, cushion discovery after finding the note, target/action coverage, carried and dropped items, hints, completion, safe text output, and save validation. Desktop and mobile adventure checks include a full walkthrough, browser reload/resume, confirmed restart, separate command history, selection/copy, clearing, internal scrolling, small keyboard viewports, theme inheritance, corrupt saves, blocked storage, and write failures.
+
+Picture tests cover nested album paths, viewer execution/completion, filenames and safe rendering, database upgrades and restart persistence, authentication/CSRF, invalid or oversized uploads, duplicate cleanup, cycle prevention, and empty-album deletion. Browser checks cover the admin upload/name/move/preview flow, public viewing, text selection, internal scrolling, and image/prompt containment on desktop, mobile, and short viewports.
 
 Browser tests use frontend port 5187, API port 3087, an isolated database at `/tmp/luna-e2e.sqlite`, and uploads at `/tmp/luna-e2e-media`. They use a test-only admin account, never the configured local account. Screenshots are written to `artifacts/` and traces to `test-results/`, both ignored. The fixtures are generated test patterns, not portfolio content.
 

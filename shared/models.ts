@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 export type Entry = { id: string; kind: 'project' | 'blog'; slug: string; title: string; markdown: string; published: boolean; createdAt: string; updatedAt: string };
 export type Social = { label: string; url: string };
-export type Catalog = { entries: Entry[]; socials: Social[]; repositoryUrl: string | null };
+export type PictureAlbum = { id: string; name: string; parentId: string | null; createdAt: string };
+export type Picture = { id: string; name: string; filename: string; albumId: string | null; url: string; createdAt: string; updatedAt: string };
+export type Pictures = { albums: PictureAlbum[]; pictures: Picture[] };
+export type Catalog = Pictures & { entries: Entry[]; socials: Social[]; repositoryUrl: string | null };
 export const themes = ['mocha', 'dracula', 'nord', 'solarized-dark'] as const;
 export type Theme = typeof themes[number];
 export const isTheme = (s: string): s is Theme => themes.includes(s as Theme);
@@ -18,4 +21,6 @@ export const contactSchema = z.object({
 });
 export const socialSchema = z.array(z.object({ label: z.string().trim().min(1).max(60), url: z.url().max(2000).refine(s => /^https?:\/\//.test(s), 'Use an HTTP or HTTPS URL.') })).max(20);
 export const accountSchema = z.object({ username: z.string().trim().min(1).max(80), password: z.string().min(12, 'Use at least 12 characters.').max(256) });
+export const pictureSchema = z.object({ name: z.string().trim().min(1, 'Enter a picture name.').max(160), albumId: z.uuid().nullable().default(null) });
+export const albumSchema = z.object({ name: z.string().trim().max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, numbers, and single hyphens.'), parentId: z.uuid().nullable().default(null) });
 export type Contact = z.infer<typeof contactSchema> & { id: string; createdAt: string; read: boolean };

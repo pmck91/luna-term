@@ -3,13 +3,14 @@ import { api } from './api';
 import type { Contact, Entry, Social } from '../shared/models';
 import { entryPath } from '../shared/models';
 import { TerminalPreview } from './Terminal';
+import { PicturesAdmin } from './PicturesAdmin';
 
 type Auth = { setupRequired: boolean; authenticated: boolean; csrf: string };
-type Page = 'entries' | 'socials' | 'contacts';
+type Page = 'entries' | 'socials' | 'contacts' | 'pictures';
 const emptyEntry = (): Entry => ({ id: '', kind: 'project', slug: '', title: '', markdown: '', published: false, createdAt: '', updatedAt: '' });
 export function Admin() {
   const [auth, setAuth] = useState<Auth | null>(null); const [error, setError] = useState('');
-  const [page, setPage] = useState<Page>('entries'); const [entries, setEntries] = useState<Entry[]>([]); const [editing, setEditing] = useState<Entry | null>(null);
+  const [page, setPage] = useState<Page>(location.pathname === '/admin/pictures' ? 'pictures' : 'entries'); const [entries, setEntries] = useState<Entry[]>([]); const [editing, setEditing] = useState<Entry | null>(null);
   const [socials, setSocials] = useState<Social[]>([]); const [contacts, setContacts] = useState<Contact[]>([]); const [notice, setNotice] = useState(''); const [busy, setBusy] = useState(false);
   const initialAuth = useRef<Promise<Auth> | null>(null);
   useEffect(() => {
@@ -43,9 +44,10 @@ export function Admin() {
   if (!auth.authenticated) return <AuthForm auth={auth} />;
   return <main className="admin-page">
     <header className="admin-header"><div><span className="admin-eyebrow">term.pmck.ie</span><h1>Luna admin</h1></div><div className="admin-header-actions"><a href="/" target="_blank" rel="noopener noreferrer">Open terminal ↗</a><button className="secondary" disabled={busy} onClick={() => void perform(async () => { await api('/api/auth/logout', { method: 'POST' }, auth.csrf); location.assign('/admin/login'); })}>Sign out</button></div></header>
-    <nav className="admin-tabs" aria-label="Admin sections">{(['entries', 'socials', 'contacts'] as Page[]).map(p => <button key={p} aria-current={page === p ? 'page' : undefined} onClick={() => { if (editing && !confirm('Leave the editor? Unsaved changes will be lost.')) return; setPage(p); setEditing(null); }}>{p === 'entries' ? 'Projects & posts' : p === 'socials' ? 'Social links' : 'Messages'}</button>)}</nav>
+    <nav className="admin-tabs" aria-label="Admin sections">{(['entries', 'pictures', 'socials', 'contacts'] as Page[]).map(p => <button key={p} aria-current={page === p ? 'page' : undefined} onClick={() => { if (editing && !confirm('Leave the editor? Unsaved changes will be lost.')) return; setPage(p); setEditing(null); history.replaceState({}, '', p === 'pictures' ? '/admin/pictures' : '/admin'); }}>{p === 'entries' ? 'Projects & posts' : p === 'pictures' ? 'Pictures' : p === 'socials' ? 'Social links' : 'Messages'}</button>)}</nav>
     {error && <div className="admin-error" role="alert">{error}{error === 'Sign in to continue.' && <> <a href="/admin/login">Sign in</a></>}</div>}
     {notice && <p className="admin-notice" role="status">{notice}</p>}
+    {page === 'pictures' && <PicturesAdmin csrf={auth.csrf} />}
     {page === 'entries' && (editing ? <EntryEditor key={editing.id || 'new'} entry={editing} csrf={auth.csrf} onCancel={() => { if (confirm('Discard unsaved changes?')) setEditing(null); }} onSave={async () => { setEditing(null); await load('entries'); setNotice('Entry saved.'); }} /> : <>
       <div className="section-heading"><h2>Projects & posts</h2><button onClick={() => setEditing(emptyEntry())}>Create entry</button></div>
       <div className="admin-list">{entries.map(entry => <div className="admin-list-row" key={entry.id}><div><h3>{entry.title}</h3><code>~{entryPath(entry)}</code><p>{entry.kind === 'project' ? 'Project' : 'Blog post'} · <span className={entry.published ? 'published-status' : ''}>{entry.published ? 'Published' : 'Draft'}</span></p></div><div className="row-actions"><button className="secondary" onClick={() => setEditing(entry)}>Edit & preview</button><button className="danger" disabled={busy} onClick={() => { if (confirm(`Delete “${entry.title}”?`)) void perform(async () => { await api(`/api/admin/entries/${entry.id}`, { method: 'DELETE' }, auth.csrf); await load('entries'); }, 'Entry deleted.'); }}>Delete</button></div></div>)}</div>

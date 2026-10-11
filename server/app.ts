@@ -11,6 +11,7 @@ import { resolve, join } from 'node:path';
 import { z } from 'zod';
 import { openDatabase, mapEntry, syncMedia } from './db';
 import { SqliteSessionStore } from './session-store';
+import { pictureRoutes, readPictures } from './pictures';
 import type { Config } from './config';
 import { accountSchema, contactSchema, entrySchema, socialSchema } from '../shared/models';
 
@@ -49,7 +50,7 @@ export function createApp(config: Config) {
   app.get('/api/public/catalog', (_req, res) => {
     const entries = (db.prepare('SELECT * FROM entries WHERE published=1 ORDER BY created_at DESC').all() as Record<string, unknown>[]).map(mapEntry);
     const socials = JSON.parse((db.prepare("SELECT value FROM settings WHERE key='socials'").get() as { value: string }).value);
-    res.set('Cache-Control', 'no-store').json({ entries, socials, repositoryUrl: config.repositoryUrl });
+    res.set('Cache-Control', 'no-store').json({ entries, socials, repositoryUrl: config.repositoryUrl, ...readPictures(db) });
   });
   app.post('/api/contact', originCheck, limiter(config.contactLimit, 15 * 60000, 'Message limit reached. Try again in 15 minutes.'), (req, res) => {
     const body = contactSchema.parse(req.body);
@@ -82,6 +83,7 @@ export function createApp(config: Config) {
   });
   app.post('/api/auth/logout', requireAuth, originCheck, csrf, (req, res, next) => req.session.destroy(err => { if (err) { next(err); return; } res.clearCookie(cookieName, { path: '/', secure: config.production, httpOnly: true, sameSite: 'strict' }).json({ ok: true }); }));
   app.use('/api/admin', requireAuth, (req, res, next) => { res.set('Cache-Control', 'no-store'); if (['GET', 'HEAD'].includes(req.method)) next(); else originCheck(req, res, () => csrf(req, res, next)); });
+  pictureRoutes(app, db, config.mediaPath);
   app.get('/api/admin/entries', (_req, res) => res.json((db.prepare('SELECT * FROM entries ORDER BY updated_at DESC').all() as Record<string, unknown>[]).map(mapEntry)));
   app.post('/api/admin/entries', (req, res) => {
     const b = entrySchema.parse(req.body); const id = randomUUID(), now = new Date().toISOString();
@@ -135,7 +137,7 @@ export function createApp(config: Config) {
   app.use((error: Error & { code?: string; status?: number }, _req: Request, res: Response, _next: NextFunction) => {
     if (error instanceof z.ZodError) { res.status(400).json({ error: error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('\n') }); return; }
     if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') { res.status(409).json({ error: 'That filename is already in use.' }); return; }
-    if (error instanceof multer.MulterError) { res.status(400).json({ error: 'Upload one file, up to 50 MB.' }); return; }
+    if (error instanceof multer.MulterError) { res.status(400).json({ error: _req.path.startsWith('/api/admin/pictures') ? 'Upload one picture, up to 10 MB, with its name and album.' : 'Upload one file, up to 50 MB.' }); return; }
     if (error.status && error.status < 500) { res.status(error.status).json({ error: 'Invalid request.' }); return; }
     console.error('Request failed:', error.message); res.status(500).json({ error: 'Something went wrong. Please try again.' });
   });

@@ -3,7 +3,7 @@ import { adventureInput, completeAdventure, createAdventure, describeRoom, hintS
 import { adventureHelp, copy, interactionVerbs, objectDefinitions, rooms, roomIds, type InteractionVerb, type RoomId } from '../shared/adventure-content';
 import { complete, execute } from '../shared/shell';
 import type { Catalog } from '../shared/models';
-const catalog: Catalog = { entries: [], socials: [], repositoryUrl: null };
+const catalog: Catalog = { entries: [], socials: [], repositoryUrl: null, pictures: [], albums: [] };
 const text = (state: AdventureState, command: string) => adventureInput(state, command).output.map(line => line.text).join('\n');
 function walk(state: AdventureState, commands: string[]) {
   for (const command of commands) {

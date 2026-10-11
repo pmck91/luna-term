@@ -26,6 +26,15 @@ export function openDatabase(filename: string) {
     db.prepare('INSERT INTO settings VALUES (?, ?)').run('socials', '[]');
     db.prepare('INSERT INTO migrations VALUES (1)').run();
   })();
+  if (!db.prepare('SELECT 1 FROM migrations WHERE version = 2').get()) db.transaction(() => {
+    db.exec(`
+      CREATE TABLE picture_albums (id TEXT PRIMARY KEY, name TEXT NOT NULL, parent_id TEXT REFERENCES picture_albums(id) ON DELETE RESTRICT, created_at TEXT NOT NULL);
+      CREATE UNIQUE INDEX picture_album_names ON picture_albums(COALESCE(parent_id, ''), name);
+      CREATE TABLE pictures (id TEXT PRIMARY KEY, name TEXT NOT NULL, filename TEXT NOT NULL, storage_name TEXT NOT NULL, album_id TEXT REFERENCES picture_albums(id) ON DELETE RESTRICT, mime TEXT NOT NULL, size INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+      CREATE UNIQUE INDEX picture_filenames ON pictures(COALESCE(album_id, ''), filename);
+      INSERT INTO migrations VALUES (2);
+    `);
+  })();
   return db;
 }
 export function mapEntry(row: Record<string, unknown>): Entry {

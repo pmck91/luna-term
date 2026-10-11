@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { execute, complete, displayPath, type Output } from '../shared/shell';
-import { contactSchema, entryPath, isTheme, type Catalog, type Entry, type Theme } from '../shared/models';
+import { contactSchema, entryPath, isTheme, type Catalog, type Entry, type Picture, type Theme } from '../shared/models';
 import { CAT } from './logo';
 import { EntryOutput } from './EntryOutput';
 import { api } from './api';
@@ -12,11 +12,12 @@ import { bonsaiAttribution, type BonsaiOptions, type BonsaiSnapshot } from '../s
 import { adventureInput, completeAdventure, createAdventure, describeRoom, type AdventureLine, type AdventureState } from '../shared/adventure';
 import { copy as adventureCopy } from '../shared/adventure-content';
 import { AdventureOutput } from './AdventureOutput';
+import { PictureOutput } from './PictureOutput';
 import { loadAdventure, saveAdventure } from './adventure-storage';
 
 type Block = Output | { type: 'command'; prompt: string; text: string } | { type: 'login'; info: SystemInfo; date: string; repositoryUrl: string | null } | { type: 'game'; session: GameSession } | { type: 'bonsai'; snapshot: BonsaiSnapshot } | { type: 'adventure'; lines: AdventureLine[] };
 type ContactState = { step: 'name' | 'email' | 'subject' | 'message' | 'review'; name: string; email: string; subject: string; lines: string[]; submissionId: string; editing: boolean };
-const emptyCatalog: Catalog = { entries: [], socials: [], repositoryUrl: null };
+const emptyCatalog: Catalog = { entries: [], socials: [], repositoryUrl: null, albums: [], pictures: [] };
 function LoginOutput({ info, date, repositoryUrl }: { info: SystemInfo; date: string; repositoryUrl: string | null }) {
   return <div className="login-output">
     <p>Welcome to Luna 0.5.22 (GNU/Linux 6.8.0-146-generic x86_64)</p>
@@ -48,6 +49,9 @@ export function WindowChrome({ title = 'guest@term.pmck.ie: ~' }: { title?: stri
 export function TerminalPreview({ entry }: { entry: Entry }) {
   const path = entryPath(entry);
   return <section className="terminal-window preview-terminal" data-theme="mocha" aria-label="Terminal entry preview"><WindowChrome title="preview@term.pmck.ie: ~" /><div className="terminal-output"><div className="command-echo"><span className="prompt">preview@term.pmck.ie:~$ </span>{'.' + path}</div><EntryOutput entry={entry} /></div><div className="preview-prompt"><span className="prompt">preview@term.pmck.ie:~$</span><span className="static-cursor" /></div></section>;
+}
+export function TerminalPicturePreview({ picture, path }: { picture: Picture; path: string }) {
+  return <section className="terminal-window preview-terminal" data-theme="mocha" aria-label="Terminal picture preview"><WindowChrome title="preview@term.pmck.ie: ~" /><div className="terminal-output"><div className="command-echo"><span className="prompt">preview@term.pmck.ie:~$ </span>view ~{path}</div><PictureOutput picture={picture} path={path} /></div><div className="preview-prompt"><span className="prompt">preview@term.pmck.ie:~$</span><span className="static-cursor" /></div></section>;
 }
 export function Terminal() {
   const [phase, setPhase] = useState<'boot' | 'login' | 'shell'>('boot');
@@ -303,7 +307,7 @@ export function Terminal() {
         if (resized) { follow(); return; }
         followOutput.current = el.scrollHeight - el.scrollTop - el.clientHeight < 30;
       }} onMouseDown={() => { followOutput.current = false; }}>
-        {blocks.map((b, i) => b.type === 'command' ? <div className="command-echo" key={i}><span className="prompt">{b.prompt} </span>{b.text}</div> : b.type === 'login' ? <LoginOutput key={i} {...b} /> : b.type === 'entry' ? <EntryOutput key={i} entry={b.entry} /> : b.type === 'game' ? <Game2048 key={i} session={b.session} finished /> : b.type === 'bonsai' ? <BonsaiOutput key={i} snapshot={b.snapshot} /> : b.type === 'adventure' ? <AdventureOutput key={i} lines={b.lines} /> : <div key={i} className={`text-output ${b.tone || ''}`}>{outputTextLinks(b.text)}</div>)}
+        {blocks.map((b, i) => b.type === 'command' ? <div className="command-echo" key={i}><span className="prompt">{b.prompt} </span>{b.text}</div> : b.type === 'login' ? <LoginOutput key={i} {...b} /> : b.type === 'entry' ? <EntryOutput key={i} entry={b.entry} /> : b.type === 'picture' ? <PictureOutput key={i} picture={b.picture} path={b.path} onLoad={follow} /> : b.type === 'game' ? <Game2048 key={i} session={b.session} finished /> : b.type === 'bonsai' ? <BonsaiOutput key={i} snapshot={b.snapshot} /> : b.type === 'adventure' ? <AdventureOutput key={i} lines={b.lines} /> : <div key={i} className={`text-output ${b.tone || ''}`}>{outputTextLinks(b.text)}</div>)}
         {game && <Game2048 session={game} />}
         {bonsai && <Bonsai ref={bonsaiInput} options={bonsai} onExit={quitBonsai} onLayout={follow} />}
       </div>

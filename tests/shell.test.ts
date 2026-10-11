@@ -3,7 +3,7 @@ import { complete, execute, parseCommand, resolvePath } from '../shared/shell';
 import { entryPath, isTheme, type Catalog, type Entry } from '../shared/models';
 const project: Entry = { id: '1', kind: 'project', slug: 'portfolio', title: 'Portfolio', markdown: '# Portfolio\n\nHello.', published: true, createdAt: '', updatedAt: '' };
 const blog: Entry = { ...project, id: '2', kind: 'blog', slug: 'notes', title: 'Notes' };
-const catalog: Catalog = { entries: [project, blog, { ...project, id: '3', slug: 'private', published: false }], socials: [{ label: 'Example', url: 'https://example.com' }], repositoryUrl: null };
+const catalog: Catalog = { entries: [project, blog, { ...project, id: '3', slug: 'private', published: false }], socials: [{ label: 'Example', url: 'https://example.com' }], repositoryUrl: null, pictures: [], albums: [] };
 describe('command parsing', () => {
   it('handles whitespace, quotes, escaped spaces, and empty arguments', () => expect(parseCommand(' cat "a b" c\\ d \'\' ')).toEqual(['cat', 'a b', 'c d', '']));
   it('reports incomplete quotes and escapes', () => { expect(() => parseCommand('cat "test')).toThrow('Close'); expect(() => parseCommand('cat test\\')).toThrow('Incomplete'); });
@@ -28,7 +28,7 @@ describe('completion', () => {
 });
 describe('game filesystem', () => {
   it('discovers and runs the built-in game through normalized virtual paths', () => {
-    expect(execute('ls', '/', catalog).output[0]).toMatchObject({ text: 'documents/  games/  messaging/  projects/' });
+    expect(execute('ls', '/', catalog).output[0]).toMatchObject({ text: 'documents/  games/  messaging/  pictures/  projects/' });
     expect(execute('cd ~/games', '/', catalog).cwd).toBe('/games');
     expect(execute('ls', '/games', catalog).output[0]).toMatchObject({ text: '2048-readme.txt  2048.game  bonsai-readme.txt  bonsai.game  lunas-adventure-readme.txt  lunas-adventure.game' });
     expect(execute('./2048.game', '/games', catalog)).toEqual({ output: [], action: 'game2048' });

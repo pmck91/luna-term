@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { generateBonsai, renderBonsai, treeDimensions, treeText } from '../shared/bonsai';
 import { complete, execute } from '../shared/shell';
 import type { Catalog } from '../shared/models';
-const catalog: Catalog = { entries: [], socials: [], repositoryUrl: null };
+const catalog: Catalog = { entries: [], socials: [], repositoryUrl: null, pictures: [], albums: [] };
 
 describe('bonsai generator', () => {
   it('reproduces growth order and shape from a seed', () => {
