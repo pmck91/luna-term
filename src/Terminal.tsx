@@ -36,7 +36,7 @@ function LoginOutput({ info, date, repositoryUrl }: { info: SystemInfo; date: st
     </div>
     <p>Luna portfolio is developed by Peter McKinney as an experimental interactive portfolio.<br />
       Read the code: {repositoryUrl ? <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">{repositoryUrl}</a> : <span className="muted">[set GITHUB_REPOSITORY_URL]</span>}<br />
-      Not a nerd? View the regular portfolio <a href="https://pmck.ie" target="_blank" rel="noopener noreferrer">pmck.ie</a>
+      Not a nerd? View the regular portfolio <a href="https://pmck.ie" target="_blank" rel="noopener noreferrer">pmck.ie</a><br />
       Please type <span className="accent">help</span> for a list of commands.</p>
     <p className="muted">Last login: {new Date(info.lastTime).toLocaleString('en-IE', { dateStyle: 'medium', timeStyle: 'medium' })} from {info.lastAddress}</p>
   </div>;
