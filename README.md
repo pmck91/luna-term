@@ -57,6 +57,8 @@ The page never scrolls; terminal output scrolls internally. Mobile input is focu
 
 ### Games
 
+The terminal also has a few cat-related easter eggs. Their commands, copy, and session behaviour are documented in [terminal secrets](docs/terminal-secrets.md).
+
 Implementation details are in the [games architecture docs](docs/games-design.md), with separate designs for 2048 and bonsai and an [architecture and expansion guide for Luna's adventure](docs/lunas-adventure-design.md).
 
 `games/` contains 2048, bonsai, and Luna's adventure, each with its own readme. Run `~/games/2048.game`, or `cd games` followed by `./2048.game`. The selectable ASCII board redraws in place, with a different number colour for each power of two through 2048, using the current theme. Higher tiles share the 2048 colour. A compact layout follows the actual output height when the mobile keyboard leaves less space.

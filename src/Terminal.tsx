@@ -14,6 +14,7 @@ import { copy as adventureCopy } from '../shared/adventure-content';
 import { AdventureOutput } from './AdventureOutput';
 import { PictureOutput } from './PictureOutput';
 import { loadAdventure, saveAdventure } from './adventure-storage';
+import { createShellSession } from '../shared/secrets';
 
 type Block = Output | { type: 'command'; prompt: string; text: string } | { type: 'login'; info: SystemInfo; date: string; repositoryUrl: string | null } | { type: 'game'; session: GameSession } | { type: 'bonsai'; snapshot: BonsaiSnapshot } | { type: 'adventure'; lines: AdventureLine[] };
 type ContactState = { step: 'name' | 'email' | 'subject' | 'message' | 'review'; name: string; email: string; subject: string; lines: string[]; submissionId: string; editing: boolean };
@@ -72,6 +73,7 @@ export function Terminal() {
   const pendingSelection = useRef<{ text: string; position: number } | null>(null);
   const outputSize = useRef({ width: 0, height: 0 });
   const history = useRef<string[]>([]); const historyIndex = useRef(0); const draft = useRef(''); const followOutput = useRef(true); const mounted = useRef(true);
+  const shellSession = useRef(createShellSession());
   const prompt = phase === 'login' ? 'term.pmck.ie login:' : adventure ? adventure.confirmRestart ? 'restart? [yes/no]:' : 'luna>' : bonsai ? 'bonsai>' : game ? game.confirmRestart ? 'restart? [y/n]:' : '2048>' : contact ? `${contact.step === 'review' ? 'send / edit / cancel' : contact.step}:` : `${username}@term.pmck.ie:${displayPath(cwd)}$`;
   const append = (...items: Block[]) => { followOutput.current = true; setBlocks(b => [...b, ...items]); };
   const focus = () => { if (!window.getSelection()?.toString()) input.current?.focus({ preventScroll: true }); };
@@ -239,13 +241,14 @@ export function Terminal() {
     const line = value; setValue(''); append({ type: 'command', prompt, text: line });
     if (phase === 'login') {
       if (!line.trim()) { append({ type: 'text', text: 'Enter a username. Try guest.', tone: 'error' }); return; }
-      setUsername(line.trim()); append({ type: 'login', info: systemInfo(), date: new Date().toLocaleString('en-IE', { dateStyle: 'full', timeStyle: 'medium' }), repositoryUrl: catalog.repositoryUrl });
+      setUsername(line.trim()); shellSession.current = createShellSession(line.trim()); append({ type: 'login', info: systemInfo(), date: new Date().toLocaleString('en-IE', { dateStyle: 'full', timeStyle: 'medium' }), repositoryUrl: catalog.repositoryUrl });
       if (catalogError) append({ type: 'text', text: 'Content could not be loaded. Reload to reconnect. Shell commands remain available.', tone: 'error' });
       setPhase('shell'); return;
     }
     if (contact) { await submitContact(line); return; }
     if (line.trim()) { history.current.push(line); historyIndex.current = history.current.length; draft.current = ''; }
-    const result = execute(line, cwd, catalog);
+    const result = execute(line, cwd, catalog, shellSession.current);
+    if (result.session) shellSession.current = result.session;
     if (result.action === 'clear') setBlocks([]); else append(...result.output);
     if (result.cwd !== undefined) setCwd(result.cwd);
     if (result.theme) { setTheme(result.theme); try { localStorage.setItem('luna-theme', result.theme); } catch { /* Optional persistence. */ } }
