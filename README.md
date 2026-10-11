@@ -57,6 +57,8 @@ The page never scrolls; terminal output scrolls internally. Mobile input is focu
 
 ### Games
 
+Implementation details are in the [games architecture docs](docs/games-design.md), with separate designs for 2048 and bonsai and an [architecture and expansion guide for Luna's adventure](docs/lunas-adventure-design.md).
+
 `games/` contains 2048, bonsai, and Luna's adventure, each with its own readme. Run `~/games/2048.game`, or `cd games` followed by `./2048.game`. The selectable ASCII board redraws in place, with a different number colour for each power of two through 2048, using the current theme. Higher tiles share the 2048 colour. A compact layout follows the actual output height when the mobile keyboard leaves less space.
 
 Arrow keys or WASD move tiles. With an on-screen keyboard, type W/A/S/D and press Enter; direction names (`up`, `left`, `down`, `right`) also work. R requests a restart, Y confirms, and N keeps the current game. At 2048, C continues playing. Q or Ctrl+C exits and leaves the final board and score in scrollback, restoring the shell directory and command history. Selecting text keeps the existing Ctrl+C copy behaviour. Ctrl+L clears previous output while preserving the active board; Page Up/Down still navigate scrollback. Escape returns focus to the input.
@@ -73,13 +75,15 @@ The tree fits the actual output width and height, including a shorter mobile key
 
 ### Luna's adventure
 
-Run `~/games/lunas-adventure.game`, or `./lunas-adventure.game` from `~/games`. Read `~/games/lunas-adventure-readme.txt` for instructions. Play Luna, Peter's small black cat, in a seven-room house: get breakfast, earn a treat, and find the missing yellow mouse. The quests can be completed in any order. There is no time limit or losing, and every interaction has a reachable target.
+Run `~/games/lunas-adventure.game`, or `./lunas-adventure.game` from `~/games`. Read `~/games/lunas-adventure-readme.txt` for instructions. Play Luna, Peter's small black cat, in a seven-room house: get breakfast, earn a treat, and find the missing yellow mouse. The quests can be completed in any order. The office starts closed: `scratch door` in the upstairs hallway makes Peter let Luna in before returning to his desk. It stays open afterwards. Finding the office note reveals the sitting-room cushion. There is no time limit or losing, and every interaction has a reachable target.
 
-Use `look`, `inspect <item>`, `go <room>`, and cat actions such as `sniff shoes`, `meow`, `purr`, `climb shelf`, or `play sock`. `inventory`, `goals`, and `map` show carried items, progress, and the house connections. `hint`, or `hint food`, `hint treats`, and `hint toy`, gives increasingly specific help for the current step. The sock and mouse can be carried, dropped, and retrieved in other rooms; dropping the mouse does not undo finding it. `help` lists all actions. Objects shown in room descriptions and inspection responses share the engine's action definitions with Tab completion.
+Use `look`, `inspect <item>`, `go <room>`, and cat actions such as `sniff shoes`, `meow`, `purr`, `climb shelf`, or `play sock`. `inventory`, `goals`, and `map` show carried items, progress, and the house connections. `hint`, or `hint food`, `hint treats`, and `hint toy`, gives increasingly specific help for the current step. The sock, mouse, and rescued ping-pong ball can be carried, dropped, and retrieved in other rooms; dropping the mouse does not undo finding it. `help` lists all actions. Objects shown in room descriptions and inspection responses share the engine's action definitions with Tab completion.
+
+Two optional puzzles appear below the main objectives in `goals`. In the bedroom, inspect the wardrobe, free the trapped dressing gown with a paw, push the wardrobe door, and hide inside to claim a den. In the bathroom, inspect the sink, climb its rim, push the plug, and paw the tap to float the ping-pong ball out. Luna shuts the tap herself; paw the floating ball onto the bathmat to rescue it. The ball can also earn the existing treat when played with near Peter. `hint bedroom` and `hint bathroom` give separate progressive clues; plain `hint` follows the main quests. Looking at the kitchen's glass back door shows Luna greeting her fox friend.
 
 Each command and response appears as selectable terminal text in scrollback, with a persistent `luna>` prompt. Tab completes verbs, connected rooms, and visible or carried targets, including multiword names and aliases. Up/Down navigate a separate adventure history. Ctrl+L clears scrollback and shows the current room without resetting progress. Ctrl+C saves and exits unless text is selected for copying; `quit` also returns to the shell. Escape refocuses the input, and Page Up/Down scroll output. Quitting restores the previous shell directory and history.
 
-Progress is saved after changes under `luna-adventure-save` in local storage, including room, furniture position, carried/dropped item locations, quest flags, repeated interactions, and hint progress. Saves are versioned and validated before restoring; corrupt or incompatible saves start fresh with a brief message. `restart` requires a `yes`/`no` confirmation before replacing progress. If browser storage is blocked or fills up, play continues and progress can be resumed during the same visit; the terminal explains that it will not survive a reload. No adventure data is sent to the server. This is built-in content and needs no database migration, admin setup, or additional configuration. Room and item copy lives in `shared/adventure-content.ts`; the pure game engine lives in `shared/adventure.ts`.
+Progress is saved after changes under `luna-adventure-save` in local storage, including room, furniture position, carried/dropped item locations, quest flags, repeated interactions, and hint progress. Saves are versioned and validated before restoring. Version-one saves migrate to version two with their progress intact, an open office door, and fresh optional puzzles. Corrupt or incompatible saves start fresh with a brief message. `restart` requires a `yes`/`no` confirmation before replacing progress. If browser storage is blocked or fills up, play continues and progress can be resumed during the same visit; the terminal explains that it will not survive a reload. No adventure data is sent to the server. This is built-in content and needs no database migration, admin setup, or additional configuration. Room and item copy lives in `shared/adventure-content.ts`; the pure game engine lives in `shared/adventure.ts`.
 
 ## Content management
 
@@ -154,6 +158,24 @@ server {
 
 Add an HTTP-to-HTTPS redirect. Set `TRUST_PROXY` to the proxy's fixed network IP or a dedicated proxy subnet with no untrusted containers. The proxy must overwrite forwarded headers. Correct proxy trust is required for secure cookies and per-client rate limits. Do not use unconditional proxy trust.
 
+### Setup or login reports an invalid CSRF token
+
+Production authentication needs its secure session cookie. If HTTPS ends at a reverse proxy, Luna must trust that proxy's address to recognise the forwarded HTTPS request. An empty or incorrect `TRUST_PROXY` prevents the cookie from being set. The admin page reports this configuration problem before displaying the form.
+
+For Caddy, find its IP on the shared Docker network (replace `caddy` if your network has another name):
+
+```bash
+docker network inspect caddy --format '{{range .Containers}}{{println .Name .IPv4Address}}{{end}}'
+```
+
+Set `TRUST_PROXY` in `.env` to the **Caddy container's IP**, without the `/` prefix length. Use a fixed IP so container replacement keeps it valid. Ensure `PUBLIC_ORIGIN` matches the HTTPS address in your browser. Recreate the application with your usual Compose project name, then reload `/admin/setup`:
+
+```bash
+docker compose -p luna up -d --build luna
+```
+
+The browser must allow cookies for the site. Setup and login refresh their CSRF token before submitting, so an expired session does not require re-entering the form.
+
 `GET /healthz` verifies database access. Docker checks it every 30 seconds. Startup fails on missing secrets or an invalid production origin. Migrations apply transactionally before serving requests. Production sessions use Secure, HttpOnly, SameSite=Strict cookies, SQLite storage, and an eight-hour absolute authentication lifetime. Admin writes require CSRF tokens and a matching origin. Passwords use Argon2id.
 
 ## Account recovery
@@ -204,7 +226,7 @@ docker compose -p luna config --quiet
 
 Unit and API tests cover command parsing, path resolution, completion, themes, safe content rendering, private media, contact validation/persistence/rate limits, authentication, setup races, session rotation/expiry, and route protection. Game tests cover directional merges, scoring, spawning, invalid moves, win/loss detection, continued play, ASCII rendering, and personal best validation. Browser tests cover startup, the exact cat logo, keyboard controls, text selection, scrollback, mobile viewport shrinking, contact review/editing, inline image/video containment, and admin editing/preview, plus game restart/exit, saved scores, all theme palettes and tile contrast, and full board visibility in a short viewport.
 
-Bonsai tests cover seeded generation, bounded rendering, virtual commands, pause/resume, selection, screensaver cycling, reduced motion, hidden-tab suspension, and viewport fitting. Adventure tests cover the exact house graph, all six quest orders, early toy discovery, target/action coverage, carried and dropped items, hints, completion, safe text output, and save validation. Desktop and mobile adventure checks include a full walkthrough, browser reload/resume, confirmed restart, separate command history, selection/copy, clearing, internal scrolling, small keyboard viewports, theme inheritance, corrupt saves, blocked storage, and write failures.
+Bonsai tests cover seeded generation, bounded rendering, virtual commands, pause/resume, selection, screensaver cycling, reduced motion, hidden-tab suspension, and viewport fitting. Adventure tests cover the exact house graph, all six quest orders, optional puzzles before and after the main ending, office-door access, the fox scene, legacy-save migration, cushion discovery after finding the note, target/action coverage, carried and dropped items, hints, completion, safe text output, and save validation. Desktop and mobile adventure checks include a full walkthrough, browser reload/resume, confirmed restart, separate command history, selection/copy, clearing, internal scrolling, small keyboard viewports, theme inheritance, corrupt saves, blocked storage, and write failures.
 
 Browser tests use frontend port 5187, API port 3087, an isolated database at `/tmp/luna-e2e.sqlite`, and uploads at `/tmp/luna-e2e-media`. They use a test-only admin account, never the configured local account. Screenshots are written to `artifacts/` and traces to `test-results/`, both ignored. The fixtures are generated test patterns, not portfolio content.
 

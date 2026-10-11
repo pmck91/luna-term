@@ -9,8 +9,8 @@ import { createApp } from '../server/app';
 import { resetAdminPassword } from '../server/recovery';
 import type { Config } from '../server/config';
 const origin = 'http://localhost:5173', token = 'test-setup-token-abcdefghijklmnopqrstuvwxyz';
-let env: ReturnType<typeof createApp>, dir: string;
-beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'luna-test-')); const config: Config = { port: 3000, production: false, databasePath: join(dir, 'db.sqlite'), mediaPath: join(dir, 'media'), origin, sessionSecret: 'test-session-secret-abcdefghijklmnopqrstuvwxyz', setupToken: token, repositoryUrl: null, trustProxy: [], contactLimit: 5 }; env = createApp(config); });
+let env: ReturnType<typeof createApp>, dir: string, config: Config;
+beforeEach(() => { dir = mkdtempSync(join(tmpdir(), 'luna-test-')); config = { port: 3000, production: false, databasePath: join(dir, 'db.sqlite'), mediaPath: join(dir, 'media'), origin, sessionSecret: 'test-session-secret-abcdefghijklmnopqrstuvwxyz', setupToken: token, repositoryUrl: null, trustProxy: [], contactLimit: 5 }; env = createApp(config); });
 afterEach(() => { env.db.close(); rmSync(dir, { recursive: true, force: true }); });
 async function admin() {
   const agent = request.agent(env.app); const status = await agent.get('/api/auth/status');
@@ -19,6 +19,39 @@ async function admin() {
 }
 const message = () => ({ name: 'Visitor', email: 'visitor@example.com', subject: 'Hello', message: 'First line\nSecond line', submissionId: randomUUID() });
 describe('admin protection and setup', () => {
+  it('reports a production proxy configuration error before issuing an unusable CSRF token', async () => {
+    env.db.close(); env = createApp({ ...config, production: true, origin: 'https://term.pmck.ie' });
+    for (const forwarded of [undefined, 'https']) {
+      const req = request(env.app).get('/api/auth/status');
+      if (forwarded) req.set('X-Forwarded-Proto', forwarded);
+      const status = await req;
+      expect(status.status).toBe(503);
+      expect(status.body.error).toContain('TRUST_PROXY');
+      expect(status.body.csrf).toBeUndefined();
+      expect(status.headers['set-cookie']).toBeUndefined();
+      expect(status.headers['cache-control']).toBe('no-store');
+    }
+    expect(env.db.prepare('SELECT count(*) AS n FROM sessions').get()).toEqual({ n: 0 });
+  });
+  it('sets secure cookies and completes setup behind a trusted HTTPS proxy', async () => {
+    const productionOrigin = 'https://term.pmck.ie';
+    env.db.close(); env = createApp({ ...config, production: true, origin: productionOrigin, trustProxy: ['127.0.0.1'] });
+    const insecure = await request(env.app).get('/api/auth/status');
+    expect(insecure.status).toBe(503);
+    const status = await request(env.app).get('/api/auth/status').set('X-Forwarded-Proto', 'https');
+    expect(status.status).toBe(200);
+    const cookie = status.headers['set-cookie'][0];
+    expect(cookie).toMatch(/^__Host-luna\.sid=/);
+    expect(cookie).toContain('Secure'); expect(cookie).toContain('HttpOnly'); expect(cookie).toContain('SameSite=Strict');
+    const sessionCookie = cookie.split(';')[0];
+    const setup = () => request(env.app).post('/api/auth/setup').set('Origin', productionOrigin).set('X-Forwarded-Proto', 'https').set('Cookie', sessionCookie);
+    expect((await setup().set('X-CSRF-Token', 'wrong').send({ token, username: 'owner', password: 'test-password-with-length' })).status).toBe(403);
+    const result = await setup().set('X-CSRF-Token', status.body.csrf).send({ token, username: 'owner', password: 'test-password-with-length' });
+    expect(result.status).toBe(201);
+    const rotatedCookie = result.headers['set-cookie'][0].split(';')[0];
+    expect(rotatedCookie).not.toBe(sessionCookie);
+    expect((await request(env.app).get('/api/admin/entries').set('X-Forwarded-Proto', 'https').set('Cookie', rotatedCookie)).status).toBe(200);
+  });
   it('recovers an account and invalidates every previous session', async () => {
     const { agent } = await admin(); await resetAdminPassword(env.db, 'a-new-password-for-recovery');
     expect((await agent.get('/api/admin/entries')).status).toBe(401);

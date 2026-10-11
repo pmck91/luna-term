@@ -35,7 +35,7 @@ Moving to an unconnected room gives the available exits without changing locatio
 ### Get fed
 
 1. The opening description mentions keyboard taps upstairs. Inspecting the upstairs hallway points toward the office.
-2. Find Peter at his desk in the office.
+2. The office door is shut. `inspect door` shows scratch marks; `scratch door` makes Peter open it. Luna slips inside and Peter returns to his desk. The office stays open afterwards.
 3. `meow` or `meow peter` gets his attention. He heads to the kitchen and fills Luna's bowl. Luna stays in the office and follows using the normal room connections.
 4. `eat` or `eat food` in the kitchen completes breakfast.
 
@@ -55,19 +55,35 @@ Puzzle one, in the office:
 
 - Inspect the shelf or book. A folded corner of paper is visible behind the book.
 - `climb shelf` takes Luna up via the chair and desk. The description makes this route clear; separate chair and desk commands are optional.
-- `knock book` tips the book onto the carpet, exposing Peter's note: `Get Luna's mouse out from behind the blue sofa cushion.`
+- `knock book` tips the book onto the carpet, exposing Peter's note: `Remember to get Luna's mouse out from behind the blue couch cushion.`
 - `read note` reads it again. `down` or `climb down` returns to the floor. Moving to another room also puts Luna safely on the floor.
 
 Puzzle two, in the sitting room:
 
-- `inspect sofa` identifies the blue cushion. From the floor, Luna cannot get behind it.
-- `climb sofa` brings the cushion within reach.
+- After finding the note, `inspect couch` identifies the blue cushion. From the floor, Luna cannot get behind it.
+- `climb couch` brings the cushion within reach.
 - `push cushion` moves it and releases the mouse. Accept `paw cushion` and `knock cushion` too.
 - `take mouse` picks it up. Accept `toy` and `toy mouse` as aliases. `play mouse` then gets a short celebratory response.
 
-The note is a clue, not a lock. A visitor who climbs the sofa and pushes the cushion early can find the mouse without reading it. Wrong actions explain the problem. There are no disposable tools or irreversible puzzle failures.
+Finding the note reveals the cushion in room descriptions, inspection targets, and Tab completion. Cushion actions are unavailable before that discovery. Wrong actions explain the problem. There are no disposable tools or irreversible puzzle failures. Existing saves from before this change retain any mouse progress.
 
-All three objectives complete the adventure. Show a short ending and allow continued exploration, quitting, or restarting.
+All three objectives complete the adventure. Show a short ending and allow continued exploration, quitting, or restarting. The bedroom and bathroom puzzles are optional and do not change this ending.
+
+## Optional puzzles and kitchen scene
+
+### Bedroom: wardrobe den
+
+`inspect wardrobe` reveals the dressing gown sleeve trapped under the door and folded jumpers inside. `paw dressing gown` frees it; `push wardrobe door` opens the wardrobe; `hide wardrobe` claims the den. The gown is not an interaction target until discovered. Early attempts give clues, and completed steps cannot be undone. Luna can revisit her den after completing the puzzle. `hint bedroom` progresses from inspecting the wardrobe through freeing the sleeve, opening the door, and hiding inside.
+
+### Bathroom: ping-pong ball
+
+`inspect sink` reveals the ball stuck in the plug recess and the rubber plug. `climb sink` reaches the rim, `push plug` closes the drain, and `paw tap` adds a little water. Luna closes the tap as soon as the ball floats. `paw ball` knocks it onto the bathmat, completes the optional puzzle, and brings Luna back to the floor. Water without the plug drains away; pawing the stuck ball only spins it. No timers, overflow, or losing.
+
+The rescued ball can be played with, carried, dropped, and retrieved. Playing with it near Peter can earn the existing treat. It is separate from the missing yellow mouse. `hint bathroom` follows discovery, reaching the rim, closing the plug, filling the basin, and rescuing the ball. Optional progress is saved and appears under `Optional` in `goals`; plain `hint` still follows the main objectives.
+
+### Kitchen: fox friend
+
+The kitchen includes a glass back door. `look at back door` or `inspect back door` shows the neighbourhood fox on the patio. Luna's tail puffs up with excitement and she presses her nose to the glass. A repeat visit has a shorter response. This scene does not affect any puzzle or main objective.
 
 ## Room interactions
 
@@ -76,9 +92,9 @@ Descriptions mention interactable objects. `inspect` adds useful detail or a sma
 | Room | Objects and actions | Purpose |
 | --- | --- | --- |
 | Downstairs hallway | Sniff Peter's shoes; paw the doormat; hide behind a hanging coat | Introduce Luna, orient the player, and point upstairs toward keyboard taps |
-| Sitting room | Climb the sofa; push the blue cushion; scratch the scratching post; inspect the window | Mouse puzzle and harmless distractions |
+| Sitting room | Climb the couch; push the blue cushion; scratch the scratching post; inspect the window | Mouse puzzle and harmless distractions |
 | Kitchen | Inspect/eat from the bowl; sniff the treat cupboard; inspect the jar; read the shopping list; play with Peter's ribbon | Breakfast and treat quests |
-| Bedroom | Hide under the duvet; inspect the wardrobe; paw, play with, or take the sock beside the laundry basket | Optional hiding place and play; empty bed rules out Peter being asleep |
+| Bedroom | Hide under the duvet; inspect the wardrobe; paw, play with, or take the sock beside the laundry basket | Optional hiding place and play; wardrobe den puzzle |
 | Office | Inspect Peter; meow/purr; climb the chair or shelf; knock the book; paw the keyboard; read the note | Find Peter and uncover the toy clue |
 | Bathroom | Inspect the sink; paw the dripping tap; sit on the bathmat; paw the toilet paper to unroll it | Cat reactions and small, harmless messes |
 | Upstairs hallway | Inspect the office door; sniff the rug; roll on the rug; sit in the patch of sunlight | Point toward Peter and connect the upstairs rooms |
@@ -92,14 +108,14 @@ Every interaction verb in `help` must have a reachable, working target. Some tar
 | Verb | Working targets | Availability or response |
 | --- | --- | --- |
 | `inspect` / `look at` | Every visible object, and Peter | Identify useful details and suggest sensible actions |
-| `climb` | Chair, shelf, sofa | Chair and shelf in the office; sofa in the sitting room |
-| `knock` | Book, cushion | Book is reachable from the shelf; cushion from the sofa |
+| `climb` | Chair, shelf, couch | Chair and shelf in the office; couch in the sitting room |
+| `knock` | Book, cushion | Book is reachable from the shelf; cushion from the couch |
 | `push` | Cushion, sock | Cushion advances the puzzle; sock slides across the bedroom floor |
 | `sniff` | Shoes, rug, cupboard, sock, mouse | Available objects have their own short responses |
 | `paw` | Doormat, tap, keyboard, toilet paper, cushion, sock | Tap splashes; keyboard gets Peter's reaction; paper unrolls |
 | `scratch` | Scratching post, doormat | Post is in the sitting room; mat in the downstairs hallway |
 | `hide` | Coat, duvet | Hide behind the coat or under the duvet; the next action comes back out |
-| `sit` | Bathmat, chair, sofa, sun patch | Rest briefly on a suitable surface |
+| `sit` | Bathmat, chair, couch, sun patch | Rest briefly on a suitable surface |
 | `roll` | Rug, doormat | Roll on the upstairs rug or downstairs mat |
 | `play` | Sock, ribbon, mouse | Sock is available from the start; ribbon after Peter fetches treats; mouse after finding it |
 | `take` | Sock, mouse | Carry in Luna's mouth; the mouse must first be uncovered |
@@ -109,7 +125,7 @@ Every interaction verb in `help` must have a reachable, working target. Some tar
 | `meow` | Peter | With Peter present, use bare `meow` or `meow peter`; elsewhere Luna calls into the house |
 | `purr` | Peter | With Peter present, use bare `purr` or `purr peter`; elsewhere Luna purrs to herself |
 
-`look` names visible objects in the room description. `inspect <item>` gives practical clues, such as `The sofa is low enough to climb` or `The sock is small enough to carry.` Furniture, a closed cupboard, and Peter cannot be picked up. Explain that in plain language if attempted.
+`look` names visible objects in the room description. `inspect <item>` gives practical clues, such as `The couch is low enough to climb.` or `A soft sock, small enough to carry. You can paw it, push it, or play with it.` Furniture, a closed cupboard, and Peter cannot be picked up. Explain that in plain language if attempted.
 
 Completion and missing-target messages use the same per-object action definitions as the game engine. Only suggest targets that are present, carried, or explicitly visible but out of reach. Reachable actions work immediately; out-of-reach ones explain how Luna can get closer. Hidden objects do not appear in completion until discovered. This keeps help, hints, object descriptions, and actual commands consistent.
 
@@ -161,7 +177,7 @@ Example toy hints before finding the note:
 2. `Luna can reach the shelf from Peter's desk.`
 3. `In the office, type climb shelf, then knock book.`
 
-After the note, hints point to climbing the sofa and pushing the cushion. If the mouse has already been found, hints stop suggesting either toy puzzle.
+After the note, hints point to climbing the couch and pushing the cushion. If the mouse has already been found, hints stop suggesting either toy puzzle.
 
 ## Copy examples
 
@@ -172,11 +188,13 @@ Opening:
 ```text
 lunas-adventure
 
-You're Luna. Small black cat. Empty stomach.
+You're Luna. A small black cat. Empty stomach.
 Peter is somewhere upstairs. Your yellow mouse is missing.
 
 Downstairs hallway
-Peter's shoes are beside the mat. Keyboard taps come from upstairs.
+Peter's shoes are beside the doormat. A coat hangs low enough to hide behind. Keyboard taps come from upstairs.
+
+Nearby: shoes, doormat, coat.
 
 Exits: sitting room, upstairs hallway
 Type help for commands, or hint if you're stuck.
@@ -188,7 +206,7 @@ Getting attention:
 luna> meow
 Peter looks away from the screen.
 "Breakfast? Right. Come on."
-He heads downstairs. A cupboard opens in the kitchen.
+He heads downstairs. A cupboard opens in the kitchen. Your bowl is full.
 ```
 
 Treats:
@@ -196,7 +214,7 @@ Treats:
 ```text
 luna> purr
 You rub against Peter's ankle. He reaches for the treat jar.
-"One. Show me what you've got."
+"Only after you hunt for it!"
 He drops a ribbon onto the floor.
 
 luna> play ribbon
@@ -210,7 +228,20 @@ Book puzzle:
 luna> knock book
 One paw does it. The book lands on the carpet.
 A folded note is left on the shelf.
-"Get Luna's mouse out from behind the blue sofa cushion."
+"Remember to get Luna's mouse out from behind the blue couch cushion."
+Peter looks up. "I was reading that."
+```
+
+Repeating the keyboard interaction while Peter is still in the office:
+
+```text
+luna> paw keyboard
+You plant a paw on the keyboard. A long row of letters fills the screen.
+Peter lifts your paw. "Very helpful, Luna."
+
+luna> paw keyboard
+Another paw sends the important message to Peter's boss.
+Peter lifts your paw. "Very helpful, Luna."
 ```
 
 Incorrect reach:
@@ -218,14 +249,14 @@ Incorrect reach:
 ```text
 luna> push cushion
 You stretch up from the floor. Your paw doesn't reach.
-The sofa is low enough to climb.
+The couch is low enough to climb.
 ```
 
 Ending:
 
 ```text
 Breakfast eaten. Treat earned. Mouse found.
-You sit down for a wash. Peter can get back to whatever he was doing.
+You sit down for a well earned purr and a loaf. Peter can get back to whatever he was doing.
 
 You can keep exploring, restart, or quit.
 ```
@@ -236,11 +267,11 @@ You can keep exploring, restart, or quit.
 - Keep room descriptions and dialogue in a separate content module so copy can be edited without changing puzzle logic.
 - Extend the virtual shell with the new runnable entry and readme, then integrate adventure mode with the existing input, output blocks, focus, and keyboard handling in `Terminal.tsx`.
 - Store a small versioned save under a dedicated browser-storage key. Validate room IDs, item IDs, flags, and quest prerequisites before restoring. Save after state changes, including completion. If storage is unavailable, allow play for this session and state that it will not be saved. If a save is incompatible or corrupt, explain briefly and start fresh.
-- Inventory contains the sock and/or mouse when collected. Save their room locations when dropped. The note stays readable after discovery. Food, treats, and furniture remain room state, rather than requiring a general use-item system.
+- Inventory contains the sock, mouse, and rescued ping-pong ball when collected. Save their room locations when dropped. Version-two saves include the office door, optional puzzle flags, sink-rim position, ball location, and fox visit. Version-one saves migrate with existing progress intact and an open office door. The note stays readable after discovery. Food, treats, and furniture remain room state, rather than requiring a general use-item system.
 - No backend, database migration, admin editor, new dependency, or uploaded media is needed for this version.
 
 ## Verification
 
-Unit tests cover the exact bidirectional house graph, invalid movement, object reach and presence, parser aliases, Tab completion, repeated actions, hint stages, all quest transitions, early mouse discovery, out-of-order objectives, completion, and save validation. Include complete walkthroughs and ensure no reachable quest state requires restarting. Add a coverage check that every advertised interaction verb has at least one reachable target and a successful response; test that suggested object actions match the engine. Verify carrying, dropping, retrieving, and playing with items across rooms, including earning a treat with each playable object and retaining the found-mouse objective after dropping it.
+Unit tests cover the exact bidirectional house graph, invalid movement, object reach and presence, parser aliases, Tab completion, repeated actions, hint stages, all quest transitions, optional puzzles in every order with the main ending, office-door access, fox visits, legacy-save migration, cushion discovery after the note, out-of-order objectives, completion, and save validation. Include complete walkthroughs and ensure no reachable quest state requires restarting. Add a coverage check that every advertised interaction verb has at least one reachable target and a successful response; test that suggested object actions match the engine. Verify carrying, dropping, retrieving, and playing with items across rooms, including earning a treat with each playable object and retaining the found-mouse objective after dropping it.
 
 Browser checks cover launching through virtual paths, adventure history, prompts and keyboard controls, save/resume, confirmed restart, storage failure, quitting back to the shell, selection/copy, internal scrollback, and retained progress after clearing. Verify room text and the map at desktop and small mobile sizes, including a shortened keyboard viewport. Check theme inheritance, a visible focused prompt, and no page scrolling. Run the existing 2048, bonsai, terminal, contact, and admin regression checks before completing implementation.

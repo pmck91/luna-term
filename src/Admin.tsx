@@ -11,7 +11,21 @@ export function Admin() {
   const [auth, setAuth] = useState<Auth | null>(null); const [error, setError] = useState('');
   const [page, setPage] = useState<Page>('entries'); const [entries, setEntries] = useState<Entry[]>([]); const [editing, setEditing] = useState<Entry | null>(null);
   const [socials, setSocials] = useState<Social[]>([]); const [contacts, setContacts] = useState<Contact[]>([]); const [notice, setNotice] = useState(''); const [busy, setBusy] = useState(false);
-  useEffect(() => { document.title = 'Luna admin'; void api<Auth>('/api/auth/status').then(a => { setAuth(a); if (a.setupRequired && location.pathname !== '/admin/setup') history.replaceState({}, '', '/admin/setup'); else if (!a.authenticated && !a.setupRequired) history.replaceState({}, '', '/admin/login'); }).catch(e => setError(e.message)); }, []);
+  const initialAuth = useRef<Promise<Auth> | null>(null);
+  useEffect(() => {
+    document.title = 'Luna admin';
+    let active = true;
+    // Strict Mode repeats effects in development. Share the request so two
+    // first-run sessions cannot race to replace the browser's session cookie.
+    initialAuth.current ??= api<Auth>('/api/auth/status');
+    void initialAuth.current.then(a => {
+      if (!active) return;
+      setAuth(a);
+      if (a.setupRequired && location.pathname !== '/admin/setup') history.replaceState({}, '', '/admin/setup');
+      else if (!a.authenticated && !a.setupRequired) history.replaceState({}, '', '/admin/login');
+    }).catch(e => { if (active) setError(e.message); });
+    return () => { active = false; };
+  }, []);
   async function load(which: Page) {
     setError(''); setNotice('');
     try {
@@ -45,7 +59,13 @@ function AuthForm({ auth }: { auth: Auth }) {
   const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [token, setToken] = useState(''); const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   async function submit(e: FormEvent) {
     e.preventDefault(); setBusy(true); setError('');
-    try { await api(`/api/auth/${auth.setupRequired ? 'setup' : 'login'}`, { method: 'POST', body: JSON.stringify({ username, password, ...(auth.setupRequired ? { token } : {}) }) }, auth.csrf); location.assign('/admin'); }
+    try {
+      // Refresh before submitting if the form outlived its session or another
+      // tab changed it. The write still requires a session-bound CSRF token.
+      const currentAuth = await api<Auth>('/api/auth/status');
+      await api(`/api/auth/${auth.setupRequired ? 'setup' : 'login'}`, { method: 'POST', body: JSON.stringify({ username, password, ...(auth.setupRequired ? { token } : {}) }) }, currentAuth.csrf);
+      location.assign('/admin');
+    }
     catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   }
   return <main className="admin-auth"><a className="admin-back" href="/">← Terminal</a><form className="admin-panel" onSubmit={submit}><span className="admin-eyebrow">Luna admin</span><h1>{auth.setupRequired ? 'Create your account' : 'Sign in'}</h1>{auth.setupRequired && <p className="admin-muted">Use the setup token from your environment configuration.</p>}{error && <p className="admin-error" role="alert">{error}</p>}{auth.setupRequired && <label>Setup token<input type="password" autoComplete="off" required value={token} onChange={e => setToken(e.target.value)} /></label>}<label>Username<input autoComplete="username" required maxLength={80} value={username} onChange={e => setUsername(e.target.value)} /></label><label>Password<input type="password" autoComplete={auth.setupRequired ? 'new-password' : 'current-password'} required minLength={auth.setupRequired ? 12 : undefined} maxLength={256} value={password} onChange={e => setPassword(e.target.value)} /></label>{auth.setupRequired && <p className="admin-muted">At least 12 characters.</p>}<button disabled={busy}>{busy ? 'Please wait…' : auth.setupRequired ? 'Create account' : 'Sign in'}</button></form></main>;

@@ -21,6 +21,14 @@ export function createApp(config: Config) {
   const app = express(); app.disable('x-powered-by'); app.set('trust proxy', config.trustProxy.length ? config.trustProxy : false);
   app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'https:', 'data:'], mediaSrc: ["'self'", 'https:'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameSrc: ["'none'"], upgradeInsecureRequests: config.production ? [] : null } }, crossOriginResourcePolicy: { policy: 'same-origin' } }));
   app.use(express.json({ limit: '150kb' }));
+  app.use('/api/auth', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    if (config.production && !req.secure) {
+      res.status(503).json({ error: "Admin sessions require HTTPS. Check your reverse proxy's X-Forwarded-Proto header and set TRUST_PROXY to its IP address." });
+      return;
+    }
+    next();
+  });
   const cookieName = config.production ? '__Host-luna.sid' : 'luna.sid';
   app.use(session({ name: cookieName, secret: config.sessionSecret, store: new SqliteSessionStore(db), resave: false, saveUninitialized: false, rolling: true, cookie: { httpOnly: true, secure: config.production, sameSite: 'strict', maxAge: 8 * 3600000, path: '/' } }));
   const limiter = (limit: number, windowMs: number, message: string) => rateLimit({ limit, windowMs, standardHeaders: 'draft-8', legacyHeaders: false, message: { error: message } });
