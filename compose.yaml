@@ -18,7 +18,7 @@ services:
       - database:/app/data
       - media:/app/uploads
     networks:
-      - proxy
+      - caddy
     expose:
       - "3000"
     healthcheck:
@@ -31,10 +31,14 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    labels:
+          caddy: ${PUBLIC_DOMAIN}
+          caddy.reverse_proxy: "{{upstreams 3000}}"
+          caddy_ingress_network: caddy
+
 volumes:
   database:
   media:
 networks:
-  proxy:
+  caddy:
     external: true
-    name: ${REVERSE_PROXY_NETWORK:-proxy}
